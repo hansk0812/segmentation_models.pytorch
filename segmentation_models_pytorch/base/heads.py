@@ -14,7 +14,6 @@ class Segmentation3dHead(nn.Sequential):
         conv3d = nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size, padding=kernel_size // 2)
         upsampling = nn.Upsample(scale_factor=upsampling) if isinstance(upsampling, tuple) or upsampling > 1 else nn.Identity()
         activation = Activation(activation)
-        print (conv3d, upsampling, activation)
         super().__init__(conv3d, upsampling, activation)
 
 class ClassificationHead(nn.Sequential):

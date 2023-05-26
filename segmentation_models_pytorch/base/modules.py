@@ -47,6 +47,47 @@ class Conv2dReLU(nn.Sequential):
         super(Conv2dReLU, self).__init__(conv, bn, relu)
 
 
+class Conv3dReLU(nn.Sequential):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        padding=0,
+        stride=1,
+        use_batchnorm=True,
+    ):
+
+        if use_batchnorm == "inplace" and InPlaceABN is None:
+            raise RuntimeError(
+                "In order to use `use_batchnorm='inplace'` inplace_abn package must be installed. "
+                + "To install see: https://github.com/mapillary/inplace_abn"
+            )
+
+        conv = nn.Conv3d(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=not (use_batchnorm),
+        )
+        relu = nn.ReLU(inplace=True)
+
+        if use_batchnorm == "inplace":
+            bn = InPlaceABN(out_channels, activation="leaky_relu", activation_param=0.0)
+            relu = nn.Identity()
+
+        elif use_batchnorm and use_batchnorm != "inplace":
+            bn = nn.BatchNorm3d(out_channels)
+
+        else:
+            bn = nn.Identity()
+
+        super(Conv3dReLU, self).__init__(conv, bn, relu)
+
+
+
 class SCSEModule(nn.Module):
     def __init__(self, in_channels, reduction=16):
         super().__init__()
@@ -104,6 +145,14 @@ class Activation(nn.Module):
             self.activation = ArgMax(dim=1, **params)
         elif name == "clamp":
             self.activation = Clamp(**params)
+        elif name == "silu":
+            self.activation = nn.SiLU()
+        elif name == "leaky_relu":
+            self.activation = nn.LeakyReLU()
+        elif name == "prelu":
+            self.activation = nn.PReLU()
+        elif name == "elu":
+            self.activation = nn.ELU(alpha=0.5)
         elif callable(name):
             self.activation = name(**params)
         else:
